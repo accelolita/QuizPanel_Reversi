@@ -191,5 +191,32 @@ class TestQuizOthello(unittest.TestCase):
         self.assertEqual(state.board[0][0]["initial_genre"], "スポーツ")
         self.assertEqual(state.board[0][0]["initial_id"], 17)
 
+    def test_no_winner_consecutive_duplicates(self):
+        questions, _ = CSVHandler.load_and_process_csv(
+            self.csv_path, self.rows, self.cols, "シャッフルなし"
+        )
+        state = GameState(
+            rows=self.rows,
+            cols=self.cols,
+            csv_path=self.csv_path,
+            original_csv_path=self.csv_path,
+            shuffle_type="シャッフルなし",
+            questions=questions,
+            players=self.players
+        )
+        
+        # 1. Click cell (0, 0) and resolve with no winner
+        state.select_cell(0, 0)
+        state.resolve_question_no_winner()
+        self.assertEqual(state.board[0][0]["initial_id"], 17) # First reserve
+        
+        # 2. Click cell (0, 1) and resolve with no winner
+        state.select_cell(0, 1)
+        state.resolve_question_no_winner()
+        
+        # Cell (0, 1) should get the next reserve (ID 18), NOT ID 17
+        self.assertEqual(state.board[0][1]["initial_id"], 18)
+        self.assertNotEqual(state.board[0][0]["initial_id"], state.board[0][1]["initial_id"])
+
 if __name__ == "__main__":
     unittest.main()

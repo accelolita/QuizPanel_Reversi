@@ -114,9 +114,15 @@ class GameState:
         initial_count = self.rows * self.cols
         reserve_questions = self.questions[initial_count:]
         
+        # Get all question IDs currently assigned on the board to avoid duplicate assignments
+        board_ids = set()
+        for r in range(self.rows):
+            for c in range(self.cols):
+                board_ids.add(self.board[r][c]["initial_id"])
+        
         # Rule: Any genre
         for q in reserve_questions:
-            if q["id"] not in self.used_questions_ids:
+            if q["id"] not in self.used_questions_ids and q["id"] not in board_ids:
                 return q
                 
         return None
