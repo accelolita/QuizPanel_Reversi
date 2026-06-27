@@ -13,3 +13,4 @@ board_turn_*.png
 
 .DS_Store
 Thumbs.db
+*.csv
