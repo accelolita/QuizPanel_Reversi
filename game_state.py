@@ -95,7 +95,7 @@ class GameState:
             return self.active_question
         
         # Otherwise, search for a reserve question
-        reserve_q = self._find_reserve_question(self.board[r][c]["initial_genre"])
+        reserve_q = self._find_reserve_question()
         if reserve_q:
             self.active_question = reserve_q
             return self.active_question
@@ -105,22 +105,16 @@ class GameState:
         self.answer_revealed = False
         return None
 
-    def _find_reserve_question(self, target_genre: str) -> dict | None:
+    def _find_reserve_question(self) -> dict | None:
         """
         Finds an unused reserve question (ID > rows * cols).
         Rules:
-        1. Unused reserve question with same genre
-        2. First unused reserve question of any genre
+        1. First unused reserve question of any genre
         """
         initial_count = self.rows * self.cols
         reserve_questions = self.questions[initial_count:]
         
-        # Rule 1: Same genre
-        for q in reserve_questions:
-            if q["id"] not in self.used_questions_ids and q["genre"] == target_genre:
-                return q
-                
-        # Rule 2: Any genre
+        # Rule: Any genre
         for q in reserve_questions:
             if q["id"] not in self.used_questions_ids:
                 return q
@@ -222,8 +216,7 @@ class GameState:
 
     def has_unused_reserves(self, r: int, c: int) -> bool:
         """Checks if a reserve question is available for the given cell."""
-        genre = self.board[r][c]["initial_genre"]
-        return self._find_reserve_question(genre) is not None
+        return self._find_reserve_question() is not None
 
     def save_to_dict(self) -> dict:
         """Serializes the game state to a dictionary (JSON-compatible)."""

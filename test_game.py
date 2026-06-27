@@ -5,15 +5,25 @@ from game_state import GameState
 
 class TestQuizOthello(unittest.TestCase):
     def setUp(self):
+        self.test_dir = os.path.dirname(os.path.abspath(__file__))
         # Create a small dummy CSV file for testing
-        self.csv_path = "D:\\Google_Antigravity\\test_quiz.csv"
+        self.csv_path = os.path.join(self.test_dir, "test_quiz.csv")
         self.rows = 4
         self.cols = 4 # 16 questions needed
         
-        # 20 questions total
-        self.dummy_questions = [
-            ("アニメ", f"問題{i}", f"答え{i}") for i in range(1, 21)
-        ]
+        # 20 questions total.
+        # Make some different genres to test reserve logic.
+        # ID 1 (row 0, col 0) will be "アニメ"
+        # Reserve IDs (17-20): 17 is "スポーツ", 18 is "アニメ".
+        self.dummy_questions = []
+        for i in range(1, 21):
+            if i == 17:
+                genre = "スポーツ"
+            elif i == 18:
+                genre = "アニメ"
+            else:
+                genre = "アニメ"
+            self.dummy_questions.append((genre, f"問題{i}", f"答え{i}"))
         
         import csv
         with open(self.csv_path, mode='w', encoding='utf-8-sig', newline='') as f:
@@ -30,11 +40,11 @@ class TestQuizOthello(unittest.TestCase):
     def tearDown(self):
         if os.path.exists(self.csv_path):
             os.remove(self.csv_path)
-        # Clean up shuffled tests if any
-        for f in os.listdir("D:\\Google_Antigravity"):
+        # Clean up shuffled tests if any in test_dir
+        for f in os.listdir(self.test_dir):
             if "test_quiz_shuffled_" in f:
                 try:
-                    os.remove(os.path.join("D:\\Google_Antigravity", f))
+                    os.remove(os.path.join(self.test_dir, f))
                 except:
                     pass
 
@@ -148,10 +158,13 @@ class TestQuizOthello(unittest.TestCase):
         self.assertEqual(state.board[0][0]["color"], None)
         
         # Click (0, 0) again. It should fetch a reserve question (ID > 16)
+        # New logic: picks first reserve regardless of genre.
+        # ID 17 is "スポーツ" (first reserve), ID 18 is "アニメ" (matching genre).
+        # We assert it picks ID 17.
         q = state.select_cell(0, 0)
         self.assertIsNotNone(q)
-        self.assertGreater(q["id"], 16) # Should be 17
         self.assertEqual(q["id"], 17)
+        self.assertEqual(q["genre"], "スポーツ")
 
 if __name__ == "__main__":
     unittest.main()
