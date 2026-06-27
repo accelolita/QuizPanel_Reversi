@@ -150,6 +150,13 @@ class GameState:
         # Cell stays gray (color = None)
         self.used_questions_ids.add(self.active_question["id"])
         
+        # Update cell details to the next reserve question if available
+        r, c = self.active_cell
+        next_q = self._find_reserve_question()
+        if next_q:
+            self.board[r][c]["initial_genre"] = next_q["genre"]
+            self.board[r][c]["initial_id"] = next_q["id"]
+        
         self.turn += 1
         self.active_question = None
         self.active_cell = None
@@ -169,6 +176,11 @@ class GameState:
         self.board[r][c]["color"] = None
         # We do NOT remove the question from used_questions_ids. It stays used.
         # Next time they click this cell, it will ask a reserve question.
+        # Update cell details to the next reserve question if available
+        next_q = self._find_reserve_question()
+        if next_q:
+            self.board[r][c]["initial_genre"] = next_q["genre"]
+            self.board[r][c]["initial_id"] = next_q["id"]
         return True
 
     def _flip_othello(self, r: int, c: int, player_color: str):

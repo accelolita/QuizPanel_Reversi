@@ -156,15 +156,40 @@ class TestQuizOthello(unittest.TestCase):
         # Restore (0, 0) to gray
         state.gray_restore_cell(0, 0)
         self.assertEqual(state.board[0][0]["color"], None)
+        # Check that the cell's genre has updated to the next reserve genre ("スポーツ")
+        self.assertEqual(state.board[0][0]["initial_genre"], "スポーツ")
+        self.assertEqual(state.board[0][0]["initial_id"], 17)
         
-        # Click (0, 0) again. It should fetch a reserve question (ID > 16)
-        # New logic: picks first reserve regardless of genre.
-        # ID 17 is "スポーツ" (first reserve), ID 18 is "アニメ" (matching genre).
-        # We assert it picks ID 17.
+        # Click (0, 0) again. It should fetch a reserve question
         q = state.select_cell(0, 0)
         self.assertIsNotNone(q)
         self.assertEqual(q["id"], 17)
         self.assertEqual(q["genre"], "スポーツ")
+
+    def test_resolve_no_winner_genre_update(self):
+        questions, _ = CSVHandler.load_and_process_csv(
+            self.csv_path, self.rows, self.cols, "シャッフルなし"
+        )
+        state = GameState(
+            rows=self.rows,
+            cols=self.cols,
+            csv_path=self.csv_path,
+            original_csv_path=self.csv_path,
+            shuffle_type="シャッフルなし",
+            questions=questions,
+            players=self.players
+        )
+        
+        # Click (0, 0) which initially has genre "アニメ" (ID 1)
+        self.assertEqual(state.board[0][0]["initial_genre"], "アニメ")
+        state.select_cell(0, 0)
+        
+        # Resolve with no winner
+        state.resolve_question_no_winner()
+        
+        # Check that the cell's genre and id are updated on no winner resolution
+        self.assertEqual(state.board[0][0]["initial_genre"], "スポーツ")
+        self.assertEqual(state.board[0][0]["initial_id"], 17)
 
 if __name__ == "__main__":
     unittest.main()

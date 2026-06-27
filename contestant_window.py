@@ -43,6 +43,10 @@ class OthelloCellButton(QPushButton):
         self.is_active = active
         self.update_style(False)
 
+    def set_genre(self, genre: str):
+        self.genre = genre
+        self.genre_label.setText(genre)
+
     def update_style(self, is_hovered: bool = False):
         """Updates the style of the cell button."""
         if self.is_active:
@@ -202,6 +206,7 @@ class ContestantWindow(QMainWindow):
         for (r, c), btn in self.cells.items():
             btn.set_owner(self.state.board[r][c]["color"])
             btn.set_active((r, c) == active_cell)
+            btn.set_genre(self.state.board[r][c]["initial_genre"])
             
         # 2. Toggle Score card visibility
         self.score_card.setVisible(self.state.show_score_on_contestant)

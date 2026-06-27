@@ -432,6 +432,7 @@ class PresenterWindow(QMainWindow):
         for (r, c), btn in self.cells.items():
             btn.set_owner(self.state.board[r][c]["color"])
             btn.set_active((r, c) == active_cell)
+            btn.set_genre(self.state.board[r][c]["initial_genre"])
             
         # 2. Update Turn
         self.turn_lbl.setText(f"Turn: {self.state.turn}")
@@ -912,6 +913,10 @@ class OthelloCellButton(QPushButton):
     def set_active(self, active: bool):
         self.is_active = active
         self.update_style(False)
+
+    def set_genre(self, genre: str):
+        self.genre = genre
+        self.genre_label.setText(genre)
 
     def update_style(self, is_hovered: bool = False):
         if self.is_active:
