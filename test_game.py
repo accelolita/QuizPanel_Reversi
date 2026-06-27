@@ -218,5 +218,67 @@ class TestQuizOthello(unittest.TestCase):
         self.assertEqual(state.board[0][1]["initial_id"], 18)
         self.assertNotEqual(state.board[0][0]["initial_id"], state.board[0][1]["initial_id"])
 
+    def test_swap_conditions_trigger_only_once(self):
+        questions, _ = CSVHandler.load_and_process_csv(
+            self.csv_path, self.rows, self.cols, "シャッフルなし"
+        )
+        state = GameState(
+            rows=self.rows,
+            cols=self.cols,
+            csv_path=self.csv_path,
+            original_csv_path=self.csv_path,
+            shuffle_type="シャッフルなし",
+            questions=questions,
+            players=self.players
+        )
+        p1 = self.players[0]["color"]
+        p2 = self.players[1]["color"]
+        
+        # 16マス中、8マス埋める（50%）
+        # p1を5マス、p2を3マスにして、p2が最少マスの状態を作る
+        for r in range(2):
+            for c in range(4):
+                state.board[r][c]["color"] = p1
+        state.board[1][3]["color"] = p2
+        state.board[1][2]["color"] = p2
+        state.board[1][1]["color"] = p2
+        
+        # 現在のスコア: p1 = 5, p2 = 3 (最少マスは p2)
+        # 最少マスの p2 が正解した時の swap condition をチェック
+        # ratio = 8/16 = 50%
+        self.assertEqual(state.check_swap_condition(p2), "half")
+        
+        # p1が正解した場合は最少マスではないので None になるはず
+        self.assertIsNone(state.check_swap_condition(p1))
+        
+        # 実際に swap を行い、半分突破枠のフラグを True に更新
+        state.swap_half_used = True
+        
+        # フラグが更新されたので、再度同じ条件でも swap condition は None になるはず
+        self.assertIsNone(state.check_swap_condition(p2))
+        
+        # マスを 14マス埋める (14/16 = 87.5% = 7/8以上)
+        # p1を9マス、p2を5マスにする（計14マス）
+        for r in range(3):
+            for c in range(4):
+                state.board[r][c]["color"] = p1
+        state.board[3][0]["color"] = p1
+        state.board[3][1]["color"] = p1
+        
+        state.board[2][3]["color"] = p2
+        state.board[2][2]["color"] = p2
+        state.board[2][1]["color"] = p2
+        state.board[2][0]["color"] = p2
+        state.board[1][3]["color"] = p2
+        # ratio = 14/16 = 87.5%
+        # 最少マスの p2 が正解した時の swap condition をチェック
+        self.assertEqual(state.check_swap_condition(p2), "seven_eighths")
+        
+        # 実際に swap を行い、7/8突破枠のフラグを True に更新
+        state.swap_seven_eighths_used = True
+        
+        # 再度チェックしたら None になるはず
+        self.assertIsNone(state.check_swap_condition(p2))
+
 if __name__ == "__main__":
     unittest.main()

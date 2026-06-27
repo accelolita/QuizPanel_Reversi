@@ -42,8 +42,13 @@ class GameState:
                 })
             self.board.append(row_cells)
 
+        # 大逆転マス交換の実行済みフラグ
+        self.swap_half_used = False
+        self.swap_seven_eighths_used = False
+
         # Internal Undo Stack
         self.history_stack = []
+
 
     def get_question_by_id(self, q_id: int) -> dict | None:
         """Returns the question with the given ID (1-indexed)."""
@@ -236,6 +241,58 @@ class GameState:
         """Checks if a reserve question is available for the given cell."""
         return self._find_reserve_question() is not None
 
+    def check_swap_condition(self, winner_color: str) -> str | None:
+        """
+        大逆転マス交換の発動条件を判定する。
+        戻り値:
+          - "half": 半分以上枠で発動可能
+          - "seven_eighths": 7/8以上枠で発動可能
+          - None: 発動条件を満たさない
+        """
+        # 条件1: 正解者が最少マス数であること（同数タイ含む）
+        scores = self.get_scores()
+        winner_count = scores.get(winner_color, 0)
+        min_count = min(scores.values()) if scores else 0
+        if winner_count != min_count:
+            return None
+
+        total_cells = self.rows * self.cols
+        # 埋まっているマスを数える
+        filled = sum(
+            1 for r in range(self.rows)
+            for c in range(self.cols)
+            if self.board[r][c]["color"] is not None
+        )
+        ratio = filled / total_cells
+
+        # 2. 7/8以上埋まっており、7/8枠が未使用の場合
+        # （半分枠がまだ未使用なら、まず半分枠を消化して後の発動機会を残す）
+        if ratio >= 0.875:
+            if not self.swap_half_used:
+                return "half"
+            elif not self.swap_seven_eighths_used:
+                return "seven_eighths"
+        # 3. 半分以上（50%以上）埋まっており、半分枠が未使用の場合
+        elif ratio >= 0.5:
+            if not self.swap_half_used:
+                return "half"
+
+        return None
+
+
+    def swap_player_cells(self, color_a: str, color_b: str):
+        """
+        2人のプレイヤーのマスを全部入れ替える。
+        undo履歴へのプッシュは呼び出し元で行う。
+        """
+        for r in range(self.rows):
+            for c in range(self.cols):
+                cell_color = self.board[r][c]["color"]
+                if cell_color == color_a:
+                    self.board[r][c]["color"] = color_b
+                elif cell_color == color_b:
+                    self.board[r][c]["color"] = color_a
+
     def save_to_dict(self) -> dict:
         """Serializes the game state to a dictionary (JSON-compatible)."""
         return {
@@ -263,7 +320,9 @@ class GameState:
                 for row in self.board
             ],
             "active_question": self.active_question,
-            "active_cell": self.active_cell
+            "active_cell": self.active_cell,
+            "swap_half_used": self.swap_half_used,
+            "swap_seven_eighths_used": self.swap_seven_eighths_used
         }
 
     def load_from_dict(self, data: dict):
@@ -280,6 +339,8 @@ class GameState:
         self.show_answer_always = data.get("show_answer_always", False)
         self.answer_revealed = data.get("answer_revealed", False)
         self.used_questions_ids = set(data["used_questions_ids"])
+        self.swap_half_used = data.get("swap_half_used", False)
+        self.swap_seven_eighths_used = data.get("swap_seven_eighths_used", False)
         
         self.board = []
         for r in range(self.rows):
@@ -295,6 +356,7 @@ class GameState:
             
         self.active_question = data["active_question"]
         self.active_cell = tuple(data["active_cell"]) if data["active_cell"] else None
+
 
     def save_to_json_file(self, file_path: str):
         """Saves the serialized game state to a JSON file."""

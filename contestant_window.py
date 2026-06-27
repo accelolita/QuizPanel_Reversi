@@ -99,7 +99,7 @@ class ContestantWindow(QMainWindow):
         self.main_layout.setSpacing(15)
 
         header_layout = QHBoxLayout()
-        self.title_lbl = QLabel("クイズ用オセロ盤面", self)
+        self.title_lbl = QLabel("クイズ用オセロ盤面　勝手に改造版", self)
         self.title_lbl.setStyleSheet("color: #38bdf8; font-weight: bold;")
         self.turn_lbl = QLabel(f"Turn: {self.state.turn}", self)
         self.turn_lbl.setAlignment(Qt.AlignmentFlag.AlignRight)
